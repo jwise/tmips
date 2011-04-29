@@ -59,7 +59,7 @@ void core_cp0_reset(core_t *c, core_cp0_t *cp0)
 
 int core_cp0_step(core_t *c, core_cp0_t *cp0)
 {
-    cp0->r[CP0_RANDOM] = (cp0->r[CP0_RANDOM] + 1) % 16;
+    cp0->r[CP0_RANDOM] = 16 + (cp0->r[CP0_RANDOM] + 1) % 16;
     return 0;
 }
 
