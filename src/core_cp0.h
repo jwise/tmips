@@ -27,6 +27,13 @@ enum {
 
 #define CP0_TLB_SIZE 32
 
+enum {
+    TLB_G = 1 << 8,
+    TLB_V = 1 << 9,
+    TLB_D = 1 << 10,
+    TLB_N = 1 << 11,
+};
+
 typedef struct core_cp0 core_cp0_t;
 typedef struct tlb_entry tlb_entry_t;
 

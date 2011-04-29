@@ -9,7 +9,7 @@
 #include "exc.h"
 #include "filter.h"
 
-#define EXC_BASE 0x80000000
+#define EXC_BASE 0x80002000 /* XXX I screwed up the mapping pretty badly. */
 
 #define PAGE_MASK 0xFFFFF000
 #define OFF_MASK 0x00000FFF
@@ -88,7 +88,7 @@ int core_cp0_except(core_t *c, core_cp0_t *cp0, uint8_t exc_code)
     switch (exc_code) {
     case EXC_TLBL:
     case EXC_TLBS:
-        vector = 0x000;
+        vector = 0x200;
         break;
     default:
         vector = 0x180;
@@ -168,12 +168,20 @@ int core_cp0_translate(core_t *c, core_cp0_t *cp0, uint32_t va,
     }
 
     tlb_tag = va & PAGE_MASK;
-    if (tlb_search(c, cp0, tlb_tag, &tlb_data)) {
+    if (tlb_search(c, cp0, tlb_tag, &tlb_data) || !(tlb_data & TLB_V)) {
         cp0->r[CP0_BADVADDR] = va;
         debug_printf(VM, DETAIL,
                 "translate: %08x => TLB refill (segment=%s)\n",
                 va, seg->name);
         return core_cp0_except(c, cp0, write ? EXC_TLBL : EXC_TLBS);
+    }
+    
+    if (write && !(tlb_data & TLB_D)) {
+        cp0->r[CP0_BADVADDR] = va;
+        debug_printf(VM, DETAIL,
+                "translate: %08x => TLB modified (segment=%s)\n",
+                va, seg->name);
+        return core_cp0_except(c, cp0, EXC_MOD);
     }
 
     *pa_out = (tlb_data & PAGE_MASK) | (va & OFF_MASK);
